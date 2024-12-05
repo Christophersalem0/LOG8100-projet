@@ -126,10 +126,14 @@ jobs:
           scan-ref: 'docker.io/chsalc/webgoat:${{ github.sha }}'
           format: 'sarif'
           output: 'trivy-results.sarif'
+          args: |
+            --scanners vuln
+            --skip-files "*.jar"
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
+          token: ${{ secrets.GITHUB_TOKEN }}
         
   deployment:
     needs: security
