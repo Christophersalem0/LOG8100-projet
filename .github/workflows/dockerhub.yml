@@ -61,7 +61,7 @@ jobs:
       - name: "Build and push WebGoat"
         uses: docker/build-push-action@v6.10.0
         with:
-	  context: ./
+          context: ./
           file: ./Dockerfile
           push: true
           platforms: linux/amd64, linux/arm64
@@ -74,7 +74,7 @@ jobs:
       - name: "Build and push WebGoat desktop"
         uses: docker/build-push-action@v6.10.0
         with:
-	  context: ./
+          context: ./
           file: ./Dockerfile_desktop
           push: true
           platforms: linux/amd64, linux/arm64
