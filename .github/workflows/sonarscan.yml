@@ -8,6 +8,7 @@ jobs:
   build:
     name: Build and analyze
     runs-on: ubuntu-latest
+    allow_failure: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,4 +38,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=Christophersalem0_LOG8100-projet
-        allow_failure: true
