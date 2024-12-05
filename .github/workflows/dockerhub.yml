@@ -110,6 +110,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     name: Container security
+    timeout-minutes: 20
     steps:
       - name: Cache Trivy DB
         uses: actions/cache@v3
@@ -118,8 +119,7 @@ jobs:
           key: ${{ runner.os }}-trivy-db
           restore-keys: |
             ${{ runner.os }}-trivy-db
-      - name: Run Trivy scanner
-        timeout-minutes: 10
+      - name: Run Trivy scan
         continue-on-error: true
         uses: aquasecurity/trivy-action@0.28.0
         with:
