@@ -111,16 +111,25 @@ jobs:
     runs-on: ubuntu-latest
     name: Container security
     steps:
-      - name: Run Clair 
-        uses: quay/clair-action@main
+      - name: Cache Trivy DB
+        uses: actions/cache@v3
         with:
-          image-ref: chsalc/webgoat:${{ github.sha }}
-          format: sarif
-          output: clair_results.sarif
-      - name: Upload Clair results to github
-        uses: github/codeql-action/upload-sarif@v2
+          path: ~/.cache/trivy
+          key: ${{ runner.os }}-trivy-db
+          restore-keys: |
+            ${{ runner.os }}-trivy-db
+      - name: Run Trivy scanner
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          sarif_file: clair_results.sarif
+          scan-type: 'image'
+          scan-ref: 'docker.io/chsalc/webgoat:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
         
   deployment:
     needs: security
