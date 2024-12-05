@@ -108,6 +108,7 @@ jobs:
 
   security:
     needs: build
+    runs-on: ubuntu-latest
     name: Container security
     steps:
       - name: Run Trivy scanner
