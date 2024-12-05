@@ -1,16 +1,52 @@
-name: "Release Pipeline"
+name: Publish Docker image
 on:
-  push:
-    tags:
-      - v*
+  commit:
+    branches: ["main"]
+
 jobs:
-  release:
-    name: Release WebGoat
+  
+  lint:
+    name: Run sonar analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+          architecture: x64
+          cache: 'maven'
+
+      - name: Cache SonarQube Cloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build and analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=Christophersalem0_LOG8100-projet
+        continue-on-error: true
+    
+
+  build:
+    name: Build WebGoat
     runs-on: ubuntu-latest
     permissions:
         contents: write
     environment:
-      name: release
+      name: build
     steps:
       - uses: actions/checkout@v4
 
@@ -22,27 +58,15 @@ jobs:
           architecture: x64
           cache: 'maven'
 
-      - name: "Set labels for ${{ github.ref }}"
+      - name: "Set labels for ${{ github.head_ref }}"
         run: |
-          echo "WEBGOAT_TAG_VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
-          WEBGOAT_MAVEN_VERSION=${{ github.ref_name }}
+          echo "WEBGOAT_TAG_VERSION=${{ github.sha }}" >> $GITHUB_ENV
+          WEBGOAT_MAVEN_VERSION=${{ github.sha }}
           echo "WEBGOAT_MAVEN_VERSION=${WEBGOAT_MAVEN_VERSION:1}" >> $GITHUB_ENV
       - name: Build with Maven
         run: |
           mvn --no-transfer-progress versions:set -DnewVersion=${{ env.WEBGOAT_MAVEN_VERSION }}
           mvn --no-transfer-progress install -DskipTests
-
-      - name: "Create release"
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: false
-          files: |
-            target/webgoat-${{ env.WEBGOAT_MAVEN_VERSION }}.jar
-          body: |
-           ## Version ${{ github.ref_name }}
-
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: "Set up QEMU"
         uses: docker/setup-qemu-action@v3.1.0
@@ -58,7 +82,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: "Build and push WebGoat"
+      - name: "Build WebGoat"
         uses: docker/build-push-action@v6.10.0
         with:
           context: ./
@@ -67,19 +91,62 @@ jobs:
           platforms: linux/amd64, linux/arm64
           tags: |
             chsalc/webgoat:${{ env.WEBGOAT_TAG_VERSION }}
-            chsalc/webgoat:latest
           build-args: |
             webgoat_version=${{ env.WEBGOAT_MAVEN_VERSION }}
 
-      - name: "Build and push WebGoat desktop"
-        uses: docker/build-push-action@v6.10.0
+      #- name: "Build WebGoat desktop"
+      #  uses: docker/build-push-action@v6.10.0
+      #  with:
+      #    context: ./
+      #    file: ./Dockerfile_desktop
+      #    push: true
+      #    platforms: linux/amd64, linux/arm64
+      #    tags: |
+      #      chsalc/webgoat-desktop:${{ env.WEBGOAT_TAG_VERSION }}
+      #    build-args: |
+      #      webgoat_version=${{ env.WEBGOAT_MAVEN_VERSION }}
+
+  security:
+    needs: build
+    name: Container security
+    steps:
+      - name: Run Trivy scanner
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          context: ./
-          file: ./Dockerfile_desktop
-          push: true
-          platforms: linux/amd64, linux/arm64
-          tags: |
-            chsalc/webgoat-desktop:${{ env.WEBGOAT_TAG_VERSION }}
-            chsalc/webgoat-desktop:latest
-          build-args: |
-            webgoat_version=${{ env.WEBGOAT_MAVEN_VERSION }}
+          scan-type: 'image'
+          scan-ref: 'chsalc/webgoat:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        
+  deployment:
+    needs: build
+    name: Deploy WebGoat
+    runs-on: ubuntu-latest
+    permissions:
+        contents: write
+    environment:
+      name: deploy
+    steps:
+
+      - name: "Login to dockerhub"
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: "Deploy WebGoat"
+        run: |
+          docker pull chsalc/webgoat:${{ github.sha }}
+          docker tag chsalc/webgoat:${{ github.sha }} chsalc/webgoat:latest
+          docker push chsalc/webgoat:latest
+
+      #- name: "Deploy WebGoat desktop"
+      #  run: |
+      #    docker pull chsalc/webgoat-desktop:${{ github.sha }}
+      #    docker tag chsalc/webgoat-desktop:${{ github.sha }} chsalc/webgoat-desktop:latest
+      #    docker push chsalc/webgoat-desktop:latest
