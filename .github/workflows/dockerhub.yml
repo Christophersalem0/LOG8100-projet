@@ -5,7 +5,6 @@ on:
       - v*
 jobs:
   release:
-    if: github.repository == 'WebGoat/WebGoat'
     name: Release WebGoat
     runs-on: ubuntu-latest
     permissions:
