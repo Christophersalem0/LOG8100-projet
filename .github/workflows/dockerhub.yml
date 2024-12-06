@@ -4,7 +4,14 @@ on:
     branches: ["main"]
 
 jobs:
-  
+  permissions:
+    security-events: write
+
+    packages: read
+
+    actions: read
+    contents: read
+
   lint:
     name: Run sonar analysis
     runs-on: ubuntu-latest
