@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webgoat-deployment
+  namespace: default
+  labels:
+    app: webgoat
+spec:
+  replicas: 3 # Number of pods
+  selector:
+    matchLabels:
+      app: webgoat
+  template:
+    metadata:
+      labels:
+        app: webgoat
+    spec:
+      containers:
+      - name: webgoat-container
+        image: chsalc/webgoat:latest # Replace with the correct image tag if needed
+        ports:
+        - containerPort: 8080 # Internal port 8080
+        - containerPort: 9090 # Internal port 9090
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
