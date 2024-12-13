@@ -56,3 +56,4 @@ each serving a specific purpose.
 ### Deploy
 
 - Push the Docker image to the registry with the latest tag.
+
