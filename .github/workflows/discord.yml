@@ -1,10 +1,6 @@
 name: Send Issue Count to Discord
 
 on:
-  push:
-    branches:
-      - main
-  # You can also set a schedule for periodic checks
   schedule:
     - cron: '0 0 * * *' # Runs once a day at midnight UTC
 
