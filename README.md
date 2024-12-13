@@ -5,6 +5,8 @@
 - `ansible`
 - `terraform`
 - `az CLI`
+- `kubectl`
+- `helm`
 
 ## Usage
 
