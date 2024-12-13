@@ -1,0 +1,28 @@
+name: Send Issue Count to Discord
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs once a day at midnight UTC
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the number of open issues
+        id: issues_count
+        run: |
+          # Fetch the number of open issues using GitHub's API
+          ISSUE_COUNT=$(curl -s https://api.github.com/repos/${{ github.repository }}/issues?state=open | jq '. | length')
+          echo "Found $ISSUE_COUNT open issues."
+          echo "issue_count=$ISSUE_COUNT" >> $GITHUB_ENV
+
+      - name: Send message to Discord
+        run: |
+          # Access the Discord webhook URL from secrets
+          DISCORD_WEBHOOK_URL=${{ secrets.WEBHOOK_URL }}
+          
+          # Prepare the message to send
+          MESSAGE="There are ${{ env.issue_count }} open issues in the repository."
+
+          # Send the message using curl
+          curl -X POST -H "Content-Type: application/json" -d '{"content": "'"$MESSAGE"'"}' $DISCORD_WEBHOOK_URL
