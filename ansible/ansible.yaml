@@ -1,0 +1,64 @@
+- name: WebGoat Kubernetes
+  hosts: localhost
+  tasks:
+    - name: Deployment
+      kubernetes.core.k8s:
+        kubeconfig: ~/config.yaml
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: webgoat-deployment
+            namespace: default
+            labels:
+              app: webgoat
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: webgoat
+            template:
+              metadata:
+                labels:
+                  app: webgoat
+              spec:
+                containers:
+                - name: webgoat-container
+                  image: chsalc/webgoat:latest
+                  ports:
+                  - containerPort: 8080
+                  - containerPort: 9090
+                  resources:
+                    requests:
+                      memory: "512Mi"
+                      cpu: "500m"
+                    limits:
+                      memory: "1Gi"
+                      cpu: "1"
+
+    - name: WebGoat Service
+      kubernetes.core.k8s:
+        kubeconfig: ~/config.yaml
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: webgoat-service
+            namespace: default
+            labels:
+              app: webgoat
+          spec:
+            selector:
+              app: webgoat
+            type: LoadBalancer
+            ports:
+            - name: http-port
+              protocol: TCP
+              port: 8080
+              targetPort: 8080
+            - name: admin-port
+              protocol: TCP
+              port: 9090
+              targetPort: 9090
