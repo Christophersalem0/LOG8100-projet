@@ -2,15 +2,14 @@ name: Run all CI/CD
 on:
   push:
     branches: ["main"]
-
+    
+permissions:
+  security-events: write
+  packages: read
+  actions: read
+  contents: read
+  
 jobs:
-  permissions:
-    security-events: write
-
-    packages: read
-
-    actions: read
-    contents: read
 
   lint:
     name: Run sonar analysis
