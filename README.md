@@ -12,7 +12,7 @@
 
 ### Preparation
 
-The default Ansible configuration setups a load balancer with 3 instances of the webgoat service, each of them have a limit of 1 Gi memory usage.\
+The default Ansible configuration sets up a load balancer with 3 instances of the webgoat service, each of them have a limit of 1 Gi memory usage.\
 You can change these values in the `ansible.yaml` if needed.
 
 ### Launch
