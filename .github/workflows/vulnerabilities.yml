@@ -1,0 +1,36 @@
+name: Fetch Vulnerability Data from CodeQL
+
+on:
+  schedule:
+    - cron: '0 0 * * *' 
+
+jobs:
+  fetch-vulnerabilities:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get Vulnerability Alerts from GitHub API
+        id: get_vulns
+        run: |
+          # Fetch the security alerts using the GitHub API
+          response=$(curl -s \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/vulnerability-alerts")
+          
+          # Extract the number of vulnerabilities (in this case, CodeQL findings)
+          vuln_count=$(echo "$response" | jq '[.[]] | length')
+          
+          echo "Vulnerabilities found: $vuln_count"
+          echo "::set-output name=vulnerabilities::$vuln_count"
+
+      - name: Send notification to Discord
+        uses: peter-evans/discord-webhook@v1
+        with:
+          url: ${{ secrets.WEBHOOK_URL }} 
+          content: |
+            **CodeQL Vulnerability Report for Repository:**
+            The repository has ${{ steps.get_vulns.outputs.vulnerabilities }} vulnerabilities detected in the latest CodeQL scan.
