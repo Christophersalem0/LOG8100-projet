@@ -27,10 +27,13 @@ jobs:
           echo "Vulnerabilities found: $vuln_count"
           echo "::set-output name=vulnerabilities::$vuln_count"
 
-      - name: Send notification to Discord
-        uses: peter-evans/discord-webhook@v1
-        with:
-          url: ${{ secrets.WEBHOOK_URL }} 
-          content: |
-            **CodeQL Vulnerability Report for Repository:**
-            The repository has ${{ steps.get_vulns.outputs.vulnerabilities }} vulnerabilities detected in the latest CodeQL scan.
+      - name: Send message to Discord
+        run: |
+          # Access the Discord webhook URL from secrets
+          DISCORD_WEBHOOK_URL=${{ secrets.WEBHOOK_URL }}
+          
+          # Prepare the message to send
+          MESSAGE="The repository has ${{ steps.get_vulns.outputs.vulnerabilities }} vulnerabilities detected in the latest CodeQL scan."
+
+          # Send the message using curl
+          curl -X POST -H "Content-Type: application/json" -d '{"content": "'"$MESSAGE"'"}' $DISCORD_WEBHOOK_URL
