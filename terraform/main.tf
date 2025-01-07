@@ -155,7 +155,7 @@ resource "azapi_resource" "alertmanager_configuration" {
       },
       "action" : {
         "webhook" : {
-          "uri" : "https://discord.com/api/webhooks/1316957765201166397/qX_Rdnx4L3lMUjZkMYDMGeHteoRTqyxFmFiVgZtET2GCvzeAsmW8_hAc9cgvGcr5YX3I"
+          "uri" : "https://discord.com/api/webhooks/"
           "headers" : {
             "Content-Type" : "application/json"
           },
